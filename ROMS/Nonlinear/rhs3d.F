@@ -1113,12 +1113,12 @@
           DO i=IstrU,Iend
             str_a_u=0.5_r8*(str_a(i-1,j,k)+str_a(i,j,k))
             IF (str_a_u.gt.0.0_r8) THEN
-              v_at_u=0.25_r8*(v(i-1,j  ,k,nstp)+v(i,j  ,k,nstp)+       &
-     &                        v(i-1,j+1,k,nstp)+v(i,j+1,k,nstp))
-              spd=SQRT(u(i,j,k,nstp)**2+v_at_u**2)
+              v_at_u=0.25_r8*(v(i-1,j  ,k,nrhs)+v(i,j  ,k,nrhs)+       &
+     &                        v(i-1,j+1,k,nrhs)+v(i,j+1,k,nrhs))
+              spd=SQRT(u(i,j,k,nrhs)**2+v_at_u**2)
               cff=0.5_r8*str_cd(ng)*str_a_u*spd*                        &
      &            0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
-              ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff*u(i,j,k,nstp)
+              ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff*u(i,j,k,nrhs)
             END IF
           END DO
         END DO
@@ -1127,12 +1127,12 @@
           DO i=Istr,Iend
             str_a_v=0.5_r8*(str_a(i,j-1,k)+str_a(i,j,k))
             IF (str_a_v.gt.0.0_r8) THEN
-              u_at_v=0.25_r8*(u(i  ,j-1,k,nstp)+u(i+1,j-1,k,nstp)+    &
-     &                        u(i  ,j  ,k,nstp)+u(i+1,j  ,k,nstp))
-              spd=SQRT(u_at_v**2+v(i,j,k,nstp)**2)
+              u_at_v=0.25_r8*(u(i  ,j-1,k,nrhs)+u(i+1,j-1,k,nrhs)+    &
+     &                        u(i  ,j  ,k,nrhs)+u(i+1,j  ,k,nrhs))
+              spd=SQRT(u_at_v**2+v(i,j,k,nrhs)**2)
               cff=0.5_r8*str_cd(ng)*str_a_v*spd*                        &
      &            0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
-              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff*v(i,j,k,nstp)
+              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff*v(i,j,k,nrhs)
             END IF
           END DO
         END DO
