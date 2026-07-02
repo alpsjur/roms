@@ -676,6 +676,20 @@
      &                      crgban_cw(ng), (/0/), (/0/),                &
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# ifdef STRUCTURE_DRAG
+!
+!  Structure drag parameters.
+!
+      CALL netcdf_put_fvar (ng, model, ncname, 'str_cd',                &
+     &                      str_cd(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'gls_c4',                &
+     &                      gls_c4(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# endif
 #endif
 #ifdef WEC
       CALL netcdf_put_fvar (ng, model, ncname, 'wec_alpha',             &
@@ -4035,6 +4049,20 @@
      &                          crgban_cw(ng), (/0/), (/0/),            &
      &                          pioFile = pioFile)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# ifdef STRUCTURE_DRAG
+!
+!  Structure drag parameters.
+!
+      CALL pio_netcdf_put_fvar (ng, model, ncname, 'str_cd',            &
+     &                          str_cd(ng), (/0/), (/0/),               &
+     &                          pioFile = pioFile)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      CALL pio_netcdf_put_fvar (ng, model, ncname, 'gls_c4',            &
+     &                          gls_c4(ng), (/0/), (/0/),               &
+     &                          pioFile = pioFile)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# endif
 # endif
 # ifdef WEC
       CALL pio_netcdf_put_fvar (ng, model, ncname, 'wec_alpha',         &

@@ -117,7 +117,12 @@
      &                       MIXING(ng) % Akp,                          &
      &                       MIXING(ng) % Lscale,                       &
      &                       MIXING(ng) % gls,                          &
+# ifdef STRUCTURE_DRAG
+     &                       MIXING(ng) % tke,                          &
+     &                       MIXING(ng) % str_a)
+# else
      &                       MIXING(ng) % tke)
+# endif
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 19, __LINE__, MyFile)
 # endif
@@ -150,7 +155,12 @@
      &                             Dissip_break, Dissip_wcap,           &
 # endif
      &                             Akt, Akv, bvf,                       &
+# ifdef STRUCTURE_DRAG
+     &                             Akk, Akp, Lscale, gls,               &
+     &                             tke, str_a)
+# else
      &                             Akk, Akp, Lscale, gls, tke)
+# endif
 !***********************************************************************
 !
       USE mod_param
@@ -213,6 +223,9 @@
       real(r8), intent(inout) :: Lscale(LBi:,LBj:,0:)
       real(r8), intent(inout) :: gls(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: tke(LBi:,LBj:,0:,:)
+#  ifdef STRUCTURE_DRAG
+      real(r8), intent(in) :: str_a(LBi:,LBj:,:)
+#  endif
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -256,6 +269,9 @@
       real(r8), intent(inout) :: Lscale(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: gls(LBi:UBi,LBj:UBj,0:N(ng),3)
       real(r8), intent(inout) :: tke(LBi:UBi,LBj:UBj,0:N(ng),3)
+# ifdef STRUCTURE_DRAG
+      real(r8), intent(in) :: str_a(LBi:UBi,LBj:UBj,N(ng))
+# endif
 # endif
 !
 !  Local variable declarations.
@@ -270,6 +286,9 @@
       real(r8) :: Gh, Gm, Kprod, Ls_unlmt, Ls_lmt, Pprod, Sh, Sm
       real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: cmu_fac1, cmu_fac2, cmu_fac3, cmu_fac4
+# ifdef STRUCTURE_DRAG
+      real(r8) :: str_a_wpt, spd2_k, spd2_k1, spd2_wpt, Pd_struct
+# endif
 # if defined KANTHA_CLAYSON_KCQE
       real(r8) :: cmu, cmup, alphan, alpham
 # endif
@@ -812,6 +831,29 @@
             gls(i,j,k,nnew)=gls(i,j,k,nnew)+                            &
      &                      dt(ng)*cff*Pprod*gls(i,j,k,nstp)/           &
      &                      MAX(tke(i,j,k,nstp),gls_Kmin(ng))
+
+# ifdef STRUCTURE_DRAG
+!
+!  Structure drag production of TKE and GLS at W-points.
+!  str_a is interpolated from rho-layers k and k+1 (above W-point k).
+!  Speed squared is averaged from rho-layers k and k+1.
+!
+            str_a_wpt=0.5_r8*(str_a(i,j,k)+str_a(i,j,k+1))
+            IF (str_a_wpt.gt.0.0_r8) THEN
+              spd2_k =0.5_r8*((u(i,  j,k,  nstp)+u(i+1,j,k,  nstp))**2+ &
+     &                        (v(i,j,  k,  nstp)+v(i,j+1,k,  nstp))**2)
+              spd2_k1=0.5_r8*((u(i,  j,k+1,nstp)+u(i+1,j,k+1,nstp))**2+ &
+     &                        (v(i,j,  k+1,nstp)+v(i,j+1,k+1,nstp))**2)
+              spd2_wpt=0.5_r8*(spd2_k+spd2_k1)
+              Pd_struct=0.5_r8*str_cd(ng)*str_a_wpt*                    &
+     &                  spd2_wpt*SQRT(MAX(spd2_wpt,0.0_r8))
+              tke(i,j,k,nnew)=tke(i,j,k,nnew)+dt(ng)*cff*Pd_struct
+              gls(i,j,k,nnew)=gls(i,j,k,nnew)+                         &
+     &                        dt(ng)*cff*gls_c4(ng)*Pd_struct*          &
+     &                        gls(i,j,k,nstp)/                          &
+     &                        MAX(tke(i,j,k,nstp),gls_Kmin(ng))
+            END IF
+# endif
 
 # if defined VEGETATION && defined VEG_TURB
 !

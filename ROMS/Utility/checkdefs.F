@@ -1301,6 +1301,18 @@
       Coptions(is:is+12)=' GLS_MIXING,'
       ivmix=ivmix+1
 #endif
+#if defined STRUCTURE_DRAG && !defined GLS_MIXING
+      IF (Master) WRITE (stdout,10)                                      &
+     &  'STRUCTURE_DRAG requires GLS_MIXING to be defined.'
+      exit_flag=5
+#endif
+#ifdef STRUCTURE_DRAG
+!
+      IF (Master) WRITE (stdout,20) 'STRUCTURE_DRAG',                   &
+     &  'Structure-induced drag and GLS mixing (Rennau et al. 2012)'
+      is=LEN_TRIM(Coptions)+2
+      Coptions(is:is+16)=' STRUCTURE_DRAG,'
+#endif
 #ifdef GRID_EXTRACT
 !
       IF (Master) WRITE (stdout,20) 'GRID_EXTRACT',                     &

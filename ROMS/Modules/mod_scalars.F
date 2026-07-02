@@ -1748,6 +1748,15 @@
 !    gls_c2        Dissipation coefficient (non-dimensional).
 !    gls_c3m       Buoyancy production coefficient (minus).
 !    gls_c3p       Buoyancy production coefficient (plus).
+# ifdef STRUCTURE_DRAG
+!    str_cd        Structure cylinder drag coefficient (non-dimensional).
+!    gls_c4        Structure-drag GLS coefficient (non-dimensional).
+!                    Analogous to gls_c1 for shear production; appears in
+!                    the psi equation as c_psi4 (Rennau et al. 2012).
+
+        real(r8), allocatable :: str_cd(:)
+        real(r8), allocatable :: gls_c4(:)
+# endif
 !    gls_E2
 !    gls_m         Turbulent kinetic energy exponent (non-dimensional).
 !    gls_n         Turbulent length scale exponent (non-dimensional).
@@ -3430,6 +3439,16 @@
         allocate ( gls_c3p(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+# ifdef STRUCTURE_DRAG
+      IF (.not.allocated(str_cd)) THEN
+        allocate ( str_cd(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(gls_c4)) THEN
+        allocate ( gls_c4(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+# endif
       IF (.not.allocated(gls_Kmin)) THEN
         allocate ( gls_Kmin(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -4202,6 +4221,12 @@
       IF (allocated(gls_c3m))           deallocate ( gls_c3m )
 
       IF (allocated(gls_c3p))           deallocate ( gls_c3p )
+
+# ifdef STRUCTURE_DRAG
+      IF (allocated(str_cd))            deallocate ( str_cd )
+
+      IF (allocated(gls_c4))            deallocate ( gls_c4 )
+# endif
 
       IF (allocated(gls_Kmin))          deallocate ( gls_Kmin )
 

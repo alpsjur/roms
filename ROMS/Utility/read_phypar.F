@@ -943,6 +943,12 @@
               Npts=load_r(Nval, Rval, Ngrids, gls_sigk)
             CASE ('GLS_SIGP')
               Npts=load_r(Nval, Rval, Ngrids, gls_sigp)
+# ifdef STRUCTURE_DRAG
+            CASE ('STR_CD')
+              Npts=load_r(Nval, Rval, Ngrids, str_cd)
+            CASE ('GLS_C4')
+              Npts=load_r(Nval, Rval, Ngrids, gls_c4)
+# endif
             CASE ('CHARNOK_ALPHA')
               Npts=load_r(Nval, Rval, Ngrids, charnok_alpha)
             CASE ('ZOS_HSIG_ALPHA')
@@ -5462,6 +5468,12 @@
      &          'GLS constant Schmidt number for TKE.'
           WRITE (out,200) gls_sigp(ng), 'gls_sigp',                     &
      &          'GLS constant Schmidt number for PSI.'
+# ifdef STRUCTURE_DRAG
+          WRITE (out,200) str_cd(ng), 'STR_CD',                         &
+     &          'Structure cylinder drag coefficient (nondimensional).'
+          WRITE (out,200) gls_c4(ng), 'GLS_C4',                         &
+     &          'Structure-drag GLS coefficient c_psi4 (nondimensional).'
+# endif
           WRITE (out,140) charnok_alpha(ng), 'charnok_alpha',           &
      &          'Charnock factor for Zos calculation.'
           WRITE (out,140) zos_hsig_alpha(ng), 'zos_hsig_alpha',         &

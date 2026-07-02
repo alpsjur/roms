@@ -236,6 +236,9 @@
 ** BVF_MIXING              if Brunt-Vaisala frequency mixing                 **
 ** GLS_MIXING              if Generic Length-Scale mixing closure            **
 ** MY25_MIXING             if Mellor/Yamada Level-2.5 closure                **
+** STRUCTURE_DRAG          if structure-induced drag and mixing               **
+**                           (Rennau, Schimmels & Burchard 2012);            **
+**                           requires GLS_MIXING                             **
 ** LMD_MIXING              if Large et al. (1994) interior closure           **
 **                                                                           **
 ** LIMIT_VDIFF             to impose an upper limit on vertical diffusion    **

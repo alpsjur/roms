@@ -31,13 +31,22 @@
       USE mod_scalars
 !
       USE exchange_2d_mod
+# ifdef STRUCTURE_DRAG
+      USE exchange_3d_mod, ONLY : exchange_r3d_tile
+# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
+# ifdef STRUCTURE_DRAG
+      USE mp_exchange_mod, ONLY : mp_exchange3d
+# endif
 # endif
 # ifdef NESTING
       USE nesting_mod,     ONLY : fill_contact
 # endif
       USE nf_fread2d_mod,  ONLY : nf_fread2d
+# ifdef STRUCTURE_DRAG
+      USE nf_fread3d_mod,  ONLY : nf_fread3d
+# endif
       USE strings_mod,     ONLY : FoundError, find_string
 !
       implicit none
@@ -2270,6 +2279,55 @@
      &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        GRID(ng) % wavedrag)
 #  endif
+# endif
+!
+# ifdef STRUCTURE_DRAG
+!
+!-----------------------------------------------------------------------
+!  Read in structure frontal area density (str_a) [m-1].
+!  This field is 3D (xi_rho, eta_rho, s_rho). It is zero where no
+!  structures exist. The variable is optional: if absent from the grid
+!  file, str_a remains zero (no structural drag).
+!-----------------------------------------------------------------------
+!
+      IF (find_string(var_name, n_var, 'str_a', vindex)) THEN
+        gtype=r3dvar
+        status=nf_fread3d(ng, model, ncname, GRD(ng)%ncid,               &
+     &                    'str_a', var_id(vindex),                        &
+     &                    0, gtype, Vsize,                                &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                  &
+     &                    Fscl, Fmin, Fmax,                               &
+#  ifdef MASKING
+     &                    GRID(ng) % rmask,                               &
+#  endif
+     &                    MIXING(ng) % str_a)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) WRITE (stdout,40) 'str_a', TRIM(ncname)
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN
+            WRITE (stdout,30) 'structure frontal area density: str_a',   &
+     &                        ng, TRIM(ncname), Fmin, Fmax
+          END IF
+        END IF
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r3d_tile (ng, tile,                               &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                            MIXING(ng) % str_a)
+        END IF
+#  ifdef DISTRIBUTE
+        CALL mp_exchange3d (ng, tile, model, 1,                           &
+     &                      LBi, UBi, LBj, UBj, 1, N(ng),                &
+     &                      NghostPoints,                                 &
+     &                      EWperiodic(ng), NSperiodic(ng),               &
+     &                      MIXING(ng) % str_a)
+#  endif
+      ELSE
+        IF (Master) WRITE (stdout,*)                                      &
+     &    ' WARNING: str_a not found in grid file; str_a set to zero.'
+      END IF
 # endif
 !
 ! Close GRID NetCDF file.
@@ -4973,6 +5031,62 @@
 #    endif
 #   endif
 #  endif
+!
+# ifdef STRUCTURE_DRAG
+!
+!-----------------------------------------------------------------------
+!  Read in structure frontal area density (str_a) [m-1] — PIO path.
+!  Optional: if absent from the grid file, str_a remains zero.
+!-----------------------------------------------------------------------
+!
+      IF (find_string(var_name, n_var, 'str_a', vindex)) THEN
+        IF (KIND(MIXING(ng)%str_a).eq.8) THEN
+          pioVar%dkind=PIO_double
+          ioDesc => ioDesc_dp_r3dvar(ng)
+        ELSE
+          pioVar%dkind=PIO_real
+          ioDesc => ioDesc_sp_r3dvar(ng)
+        END IF
+        pioVar%gtype=r3dvar
+        pioVar%vd => GRD(ng)%pioVar(vindex)%vd
+        status=nf_fread3d(ng, model, ncname,                              &
+     &                    GRD(ng)%pioFile,                                &
+     &                    'str_a', pioVar,                                &
+     &                    0, ioDesc, Vsize,                               &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                  &
+     &                    Fscl, Fmin, Fmax,                               &
+#  ifdef MASKING
+     &                    GRID(ng) % rmask,                               &
+#  endif
+     &                    MIXING(ng) % str_a)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) WRITE (stdout,40) 'str_a', TRIM(ncname)
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN
+            WRITE (stdout,30) 'structure frontal area density: str_a',   &
+     &                        ng, TRIM(ncname), Fmin, Fmax
+          END IF
+        END IF
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r3d_tile (ng, tile,                               &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                            MIXING(ng) % str_a)
+        END IF
+#  ifdef DISTRIBUTE
+        CALL mp_exchange3d (ng, tile, model, 1,                           &
+     &                      LBi, UBi, LBj, UBj, 1, N(ng),                &
+     &                      NghostPoints,                                 &
+     &                      EWperiodic(ng), NSperiodic(ng),               &
+     &                      MIXING(ng) % str_a)
+#  endif
+      ELSE
+        IF (Master) WRITE (stdout,*)                                      &
+     &    ' WARNING: str_a not found in grid file; str_a set to zero.'
+      END IF
+# endif
 !
 ! Close GRID NetCDF file.
 !
