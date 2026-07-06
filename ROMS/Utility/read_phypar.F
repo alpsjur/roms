@@ -943,7 +943,7 @@
               Npts=load_r(Nval, Rval, Ngrids, gls_sigk)
             CASE ('GLS_SIGP')
               Npts=load_r(Nval, Rval, Ngrids, gls_sigp)
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
             CASE ('STR_CD')
               Npts=load_r(Nval, Rval, Ngrids, str_cd)
             CASE ('GLS_C4')
@@ -5468,11 +5468,11 @@
      &          'GLS constant Schmidt number for TKE.'
           WRITE (out,200) gls_sigp(ng), 'gls_sigp',                     &
      &          'GLS constant Schmidt number for PSI.'
-# ifdef STRUCTURE_DRAG
-          WRITE (out,200) str_cd(ng), 'STR_CD',                         &
-     &          'Structure cylinder drag coefficient (nondimensional).'
-          WRITE (out,200) gls_c4(ng), 'GLS_C4',                         &
-     &          'Structure-drag GLS coefficient c_psi4 (nondimensional).'
+# ifdef STRUCTURE_MIXING
+          WRITE (out,200) str_cd(ng), 'str_cd',                         &
+     &          'Structure cylinder drag coefficient.'
+          WRITE (out,200) gls_c4(ng), 'gls_c4',                         &
+     &          'GLS structure production coefficient.'
 # endif
           WRITE (out,140) charnok_alpha(ng), 'charnok_alpha',           &
      &          'Charnock factor for Zos calculation.'

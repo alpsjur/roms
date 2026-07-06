@@ -117,7 +117,7 @@
      &                       MIXING(ng) % Akp,                          &
      &                       MIXING(ng) % Lscale,                       &
      &                       MIXING(ng) % gls,                          &
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
      &                       MIXING(ng) % tke,                          &
      &                       MIXING(ng) % str_a)
 # else
@@ -155,7 +155,7 @@
      &                             Dissip_break, Dissip_wcap,           &
 # endif
      &                             Akt, Akv, bvf,                       &
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
      &                             Akk, Akp, Lscale, gls,               &
      &                             tke, str_a)
 # else
@@ -223,7 +223,7 @@
       real(r8), intent(inout) :: Lscale(LBi:,LBj:,0:)
       real(r8), intent(inout) :: gls(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: tke(LBi:,LBj:,0:,:)
-#  ifdef STRUCTURE_DRAG
+#  ifdef STRUCTURE_MIXING
       real(r8), intent(in) :: str_a(LBi:,LBj:,:)
 #  endif
 # else
@@ -269,7 +269,7 @@
       real(r8), intent(inout) :: Lscale(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: gls(LBi:UBi,LBj:UBj,0:N(ng),3)
       real(r8), intent(inout) :: tke(LBi:UBi,LBj:UBj,0:N(ng),3)
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
       real(r8), intent(in) :: str_a(LBi:UBi,LBj:UBj,N(ng))
 # endif
 # endif
@@ -286,7 +286,7 @@
       real(r8) :: Gh, Gm, Kprod, Ls_unlmt, Ls_lmt, Pprod, Sh, Sm
       real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: cmu_fac1, cmu_fac2, cmu_fac3, cmu_fac4
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
       real(r8) :: str_a_wpt, spd2_k, spd2_k1, spd2_wpt, Pd_struct
 # endif
 # if defined KANTHA_CLAYSON_KCQE
@@ -832,7 +832,7 @@
      &                      dt(ng)*cff*Pprod*gls(i,j,k,nstp)/           &
      &                      MAX(tke(i,j,k,nstp),gls_Kmin(ng))
 
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
 !  Structure drag production of TKE and GLS at W-points.
 !  str_a is interpolated from rho-layers k and k+1 (above W-point k).

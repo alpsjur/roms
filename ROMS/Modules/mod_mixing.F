@@ -255,8 +255,8 @@
 #  ifdef GLS_MIXING
           real(r8), pointer :: Akp(:,:,:)
 #  endif
-#  ifdef STRUCTURE_DRAG
-!  str_a      Frontal area density of structures [m-1] at rho-points.
+#  ifdef STRUCTURE_MIXING
+!  str_a      Area density of structures [m-1] at rho-points.
           real(r8), pointer :: str_a(:,:,:)
 #  endif
 # endif
@@ -591,7 +591,7 @@
       allocate ( MIXING(ng) % Akp(LBi:UBi,LBj:UBj,0:N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
-#  ifdef STRUCTURE_DRAG
+#  ifdef STRUCTURE_MIXING
       allocate ( MIXING(ng) % str_a(LBi:UBi,LBj:UBj,N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #  endif
@@ -1038,7 +1038,7 @@
       IF (.not.destroy(ng, MIXING(ng)%Akp, MyFile,                      &
      &                 __LINE__, 'MIXING(ng)%Akp')) RETURN
 #   endif
-#   ifdef STRUCTURE_DRAG
+#   ifdef STRUCTURE_MIXING
       IF (.not.destroy(ng, MIXING(ng)%str_a, MyFile,                    &
      &                 __LINE__, 'MIXING(ng)%str_a')) RETURN
 #   endif
@@ -1526,7 +1526,7 @@
 #  endif
             END DO
           END DO
-#  ifdef STRUCTURE_DRAG
+#  ifdef STRUCTURE_MIXING
           DO k=1,N(ng)
             DO i=Imin,Imax
              MIXING(ng) % str_a(i,j,k) = IniVal

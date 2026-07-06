@@ -236,9 +236,6 @@
 ** BVF_MIXING              if Brunt-Vaisala frequency mixing                 **
 ** GLS_MIXING              if Generic Length-Scale mixing closure            **
 ** MY25_MIXING             if Mellor/Yamada Level-2.5 closure                **
-** STRUCTURE_DRAG          if structure-induced drag and mixing               **
-**                           (Rennau, Schimmels & Burchard 2012);            **
-**                           requires GLS_MIXING                             **
 ** LMD_MIXING              if Large et al. (1994) interior closure           **
 **                                                                           **
 ** LIMIT_VDIFF             to impose an upper limit on vertical diffusion    **
@@ -260,6 +257,8 @@
 ** RI_SPLINES              if splines reconstruction for vertical sheer      **
 ** ZOS_HSIG                if surface roughness from wave amplitude          **
 ** TKE_WAVEDISS            if wave breaking surface flux from wave amplitude **
+** STRUCTURE_MIXING           if structure-induced drag and mixing              **
+**                           (Rennau, Schimmels & Burchard 2012);            **
 **                                                                           **
 ** OPTIONS for the Mellor/Yamada level 2.5 closure:                          **
 **                                                                           **

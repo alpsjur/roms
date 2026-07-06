@@ -676,7 +676,7 @@
      &                      crgban_cw(ng), (/0/), (/0/),                &
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
 !  Structure drag parameters.
 !
@@ -4049,7 +4049,7 @@
      &                          crgban_cw(ng), (/0/), (/0/),            &
      &                          pioFile = pioFile)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
 !  Structure drag parameters.
 !

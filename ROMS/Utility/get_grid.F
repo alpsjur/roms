@@ -31,12 +31,12 @@
       USE mod_scalars
 !
       USE exchange_2d_mod
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
 # endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
 # endif
@@ -44,7 +44,7 @@
       USE nesting_mod,     ONLY : fill_contact
 # endif
       USE nf_fread2d_mod,  ONLY : nf_fread2d
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
       USE nf_fread3d_mod,  ONLY : nf_fread3d
 # endif
       USE strings_mod,     ONLY : FoundError, find_string
@@ -2281,10 +2281,10 @@
 #  endif
 # endif
 !
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
 !-----------------------------------------------------------------------
-!  Read in structure frontal area density (str_a) [m-1].
+!  Read in structure area density (str_a) [m-1].
 !  This field is 3D (xi_rho, eta_rho, s_rho). It is zero where no
 !  structures exist. The variable is optional: if absent from the grid
 !  file, str_a remains zero (no structural drag).
@@ -2308,7 +2308,7 @@
           RETURN
         ELSE
           IF (Master) THEN
-            WRITE (stdout,30) 'structure frontal area density: str_a',   &
+            WRITE (stdout,30) 'structure area density: str_a',   &
      &                        ng, TRIM(ncname), Fmin, Fmax
           END IF
         END IF
@@ -5032,10 +5032,10 @@
 #   endif
 #  endif
 !
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
 !-----------------------------------------------------------------------
-!  Read in structure frontal area density (str_a) [m-1] — PIO path.
+!  Read in structure area density (str_a) [m-1] — PIO path.
 !  Optional: if absent from the grid file, str_a remains zero.
 !-----------------------------------------------------------------------
 !
@@ -5066,7 +5066,7 @@
           RETURN
         ELSE
           IF (Master) THEN
-            WRITE (stdout,30) 'structure frontal area density: str_a',   &
+            WRITE (stdout,30) 'structure area density: str_a',   &
      &                        ng, TRIM(ncname), Fmin, Fmax
           END IF
         END IF

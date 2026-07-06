@@ -1943,9 +1943,9 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
-!  Structure drag parameters.
+!  Structure drag and mixing parameters.
 !
       Vinfo( 1)='str_cd'
       Vinfo( 2)='structure cylinder drag coefficient'
@@ -1955,7 +1955,7 @@
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       Vinfo( 1)='gls_c4'
-      Vinfo( 2)='structure-drag GLS coefficient (c_psi4)'
+      Vinfo( 2)='structure production coefficient'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
@@ -5504,9 +5504,9 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# ifdef STRUCTURE_DRAG
+# ifdef STRUCTURE_MIXING
 !
-!  Structure drag parameters.
+!  Structure drag and mixing parameters.
 !
       Vinfo( 1)='str_cd'
       Vinfo( 2)='structure cylinder drag coefficient'
@@ -5516,7 +5516,7 @@
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       Vinfo( 1)='gls_c4'
-      Vinfo( 2)='structure-drag GLS coefficient (c_psi4)'
+      Vinfo( 2)='structure production coefficient'
       status=def_var(ng, model, pioFile, pioVar, PIO_TYPE,              &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
