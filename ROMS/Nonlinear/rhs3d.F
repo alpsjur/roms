@@ -374,6 +374,9 @@
       real(r8) :: cff, cff1, cff2, cff3, cff4
       real(r8) :: cff5, cff6, cff7, cff8
       real(r8) :: fac, fac1, fac2
+# ifdef UV_BODYFORCE
+      real(r8) :: bfrc_ramp
+# endif
 # ifdef STRUCTURE_MIXING
       real(r8) :: str_a_u, str_a_v, v_at_u, u_at_v, spd
 # endif
@@ -540,6 +543,66 @@
           END DO
         END DO
       END DO
+# endif
+!
+# ifdef UV_BODYFORCE
+!
+!-----------------------------------------------------------------------
+!  Apply a uniform body force (acceleration) to the full water column
+!  in both x (u) and y (v) directions. A linear ramp from 0 to full
+!  strength is applied between bfrc_tstr and bfrc_tend (days). If
+!  bfrc_tend <= bfrc_tstr the force is at full strength at all times.
+!
+!  The ru/rv contribution is F * Hz / (pm * pn) at each u/v-point so
+!  that after step3d_uv divides by Hz the net velocity update is:
+!    du = dt * bfrc_ramp * bfrc_u   (m/s per time step)
+!    dv = dt * bfrc_ramp * bfrc_v
+!-----------------------------------------------------------------------
+!
+!  Compute the ramp factor (0 to 1).
+!
+      IF (bfrc_tend(ng).le.bfrc_tstr(ng)) THEN
+        bfrc_ramp=1.0_r8
+      ELSE IF (tdays(ng).le.bfrc_tstr(ng)) THEN
+        bfrc_ramp=0.0_r8
+      ELSE IF (tdays(ng).ge.bfrc_tend(ng)) THEN
+        bfrc_ramp=1.0_r8
+      ELSE
+        bfrc_ramp=REAL((tdays(ng)-bfrc_tstr(ng))/                      &
+     &                 (bfrc_tend(ng)-bfrc_tstr(ng)), r8)
+      END IF
+!
+!  Apply uniform body force in the x (xi) direction.
+!
+      IF (bfrc_u(ng).ne.0.0_r8) THEN
+        DO k=1,N(ng)
+          DO j=Jstr,Jend
+            DO i=IstrU,Iend
+              cff=bfrc_ramp*bfrc_u(ng)*                                 &
+     &            0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))/                      &
+     &            (0.25_r8*(pm(i-1,j)+pm(i,j))*                         &
+     &                     (pn(i-1,j)+pn(i,j)))
+              ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+cff
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Apply uniform body force in the y (eta) direction.
+!
+      IF (bfrc_v(ng).ne.0.0_r8) THEN
+        DO k=1,N(ng)
+          DO j=JstrV,Jend
+            DO i=Istr,Iend
+              cff=bfrc_ramp*bfrc_v(ng)*                                 &
+     &            0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))/                      &
+     &            (0.25_r8*(pm(i,j-1)+pm(i,j))*                         &
+     &                     (pn(i,j-1)+pn(i,j)))
+              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)+cff
+            END DO
+          END DO
+        END DO
+      END IF
 # endif
 !
 #  if defined VEGETATION && defined VEG_DRAG

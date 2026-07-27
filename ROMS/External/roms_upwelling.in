@@ -409,6 +409,16 @@ LtracerSponge == F F                            ! temperature, salinity, inert
      LEVSFRC == 15
      LEVBFRC == 1
 
+! Uniform body force (acceleration) parameters. Used when CPP option
+! UV_BODYFORCE is activated. The force ramps linearly from zero to full
+! strength between BFRC_TSTR and BFRC_TEND (days). If BFRC_TEND <=
+! BFRC_TSTR the full force is applied immediately with no ramp.
+
+      BFRC_U == 0.0d0                     ! m/s2, x-direction
+      BFRC_V == 0.0d0                     ! m/s2, y-direction
+    BFRC_TSTR == 0.0d0                    ! days, ramp start
+    BFRC_TEND == 0.0d0                    ! days, ramp end
+
 ! Set vertical, terrain-following coordinates transformation equation and
 ! stretching function (see below for details), [1:Ngrids].
 
@@ -2123,6 +2133,21 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! LEVSFRC      Deepest level to apply surface momentum stress as a body-force.
 !
 ! LEVBFRC      Shallowest level to apply bottom momentum stress as a body-force.
+!
+!------------------------------------------------------------------------------
+! Uniform body force parameters. Used when CPP option UV_BODYFORCE is activated.
+!------------------------------------------------------------------------------
+!
+! BFRC_U       Uniform body force acceleration in the x (xi)  direction (m/s2).
+!
+! BFRC_V       Uniform body force acceleration in the y (eta) direction (m/s2).
+!
+! BFRC_TSTR    Start time (days since DSTART) of the linear ramp-up. Before
+!              this time the body force is zero.
+!
+! BFRC_TEND    End time (days since DSTART) of the linear ramp-up. After this
+!              time the body force is at full strength. If BFRC_TEND <= BFRC_TSTR
+!              the force jumps to full strength at the start with no ramp.
 !
 !------------------------------------------------------------------------------
 ! Vertical S-coordinates parameters.

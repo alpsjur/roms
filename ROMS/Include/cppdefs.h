@@ -31,6 +31,9 @@
 **             only in idealized, high vertical resolution applications.     **
 **                                                                           **
 ** UV_ADV                  to turn ON or OFF advection terms                 **
+** UV_BODYFORCE            if applying a uniform body force (acceleration)   **
+**                           to the momentum equations in both x and y.      **
+**                           Magnitude and ramp time are set in ocean.in.    **
 ** UV_COR                  to turn ON or OFF Coriolis term                   **
 ** UV_U3ADV_SPLIT          if 3rd-order upstream split momentum advection    **
 ** UV_C2ADVECTION          to turn ON or OFF 2nd-order centered advection    **

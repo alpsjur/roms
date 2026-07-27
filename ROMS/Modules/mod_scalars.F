@@ -597,6 +597,23 @@
         integer, allocatable :: levsfrc(:)
         integer, allocatable :: levbfrc(:)
 !
+#ifdef UV_BODYFORCE
+!  Uniform body force (acceleration, m/s2) applied to the full water
+!  column. A linear ramp from zero to full strength is applied between
+!  bfrc_tstr and bfrc_tend (days). If bfrc_tend <= bfrc_tstr the force
+!  is applied at full strength from the start.
+!
+!    bfrc_u      Body force acceleration in the x (xi)  direction (m/s2)
+!    bfrc_v      Body force acceleration in the y (eta) direction (m/s2)
+!    bfrc_tstr   Ramp start time (days since model initialization)
+!    bfrc_tend   Ramp end   time (days since model initialization)
+!
+        real(r8), allocatable :: bfrc_u(:)
+        real(r8), allocatable :: bfrc_v(:)
+        real(dp), allocatable :: bfrc_tstr(:)
+        real(dp), allocatable :: bfrc_tend(:)
+#endif
+!
 !  Vertical coordinates transform.  Currently, there are two vertical
 !  transformation equations (see set_scoord.F for details):
 !
@@ -2350,6 +2367,25 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
+#ifdef UV_BODYFORCE
+      IF (.not.allocated(bfrc_u)) THEN
+        allocate ( bfrc_u(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(bfrc_v)) THEN
+        allocate ( bfrc_v(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(bfrc_tstr)) THEN
+        allocate ( bfrc_tstr(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(bfrc_tend)) THEN
+        allocate ( bfrc_tend(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#endif
+
       IF (.not.allocated(Vtransform)) THEN
         allocate ( Vtransform(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -3704,6 +3740,16 @@
 
       IF (allocated(levbfrc))           deallocate ( levbfrc )
 
+#ifdef UV_BODYFORCE
+      IF (allocated(bfrc_u))            deallocate ( bfrc_u )
+
+      IF (allocated(bfrc_v))            deallocate ( bfrc_v )
+
+      IF (allocated(bfrc_tstr))         deallocate ( bfrc_tstr )
+
+      IF (allocated(bfrc_tend))         deallocate ( bfrc_tend )
+#endif
+
       IF (allocated(Vtransform))        deallocate ( Vtransform )
 
       IF (allocated(Vstretching))       deallocate ( Vstretching )
@@ -4546,6 +4592,12 @@
 #endif
         rx0(ng)=-Large
         rx1(ng)=-Large
+#ifdef UV_BODYFORCE
+        bfrc_u(ng)   =0.0_r8
+        bfrc_v(ng)   =0.0_r8
+        bfrc_tstr(ng)=0.0_dp
+        bfrc_tend(ng)=0.0_dp
+#endif
         CLM_FILE(ng)=.FALSE.
         Lnudging(ng)=.FALSE.
         LnudgeM2CLM(ng)=.FALSE.

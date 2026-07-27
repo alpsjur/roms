@@ -983,6 +983,16 @@
               Npts=load_i(Nval, Rval, Ngrids, levsfrc)
             CASE ('LEVBFRC')
               Npts=load_i(Nval, Rval, Ngrids, levbfrc)
+#ifdef UV_BODYFORCE
+            CASE ('BFRC_U')
+              Npts=load_r(Nval, Rval, Ngrids, bfrc_u)
+            CASE ('BFRC_V')
+              Npts=load_r(Nval, Rval, Ngrids, bfrc_v)
+            CASE ('BFRC_TSTR')
+              Npts=load_r(Nval, Rval, Ngrids, bfrc_tstr)
+            CASE ('BFRC_TEND')
+              Npts=load_r(Nval, Rval, Ngrids, bfrc_tend)
+#endif
             CASE ('Vtransform')
               Npts=load_i(Nval, Rval, Ngrids, Vtransform)
               DO ng=1,Ngrids
@@ -5593,6 +5603,22 @@
      &            'Out of range bottom bodyforce level.'
             exit_flag=5
             RETURN
+          END IF
+# endif
+# ifdef UV_BODYFORCE
+          WRITE (out,200) bfrc_u(ng), 'bfrc_u',                         &
+     &          'Uniform body force acceleration in x-direction (m/s2).'
+          WRITE (out,200) bfrc_v(ng), 'bfrc_v',                         &
+     &          'Uniform body force acceleration in y-direction (m/s2).'
+          WRITE (out,140) bfrc_tstr(ng), 'bfrc_tstr',                   &
+     &          'Body force ramp-up start time (days).'
+          WRITE (out,140) bfrc_tend(ng), 'bfrc_tend',                   &
+     &          'Body force ramp-up end time (days).'
+          IF (bfrc_tend(ng).gt.bfrc_tstr(ng)) THEN
+            WRITE (out,200)                                              &
+     &            REAL(bfrc_tend(ng)-bfrc_tstr(ng),r8),                 &
+     &            'bfrc_ramp',                                          &
+     &            'Body force linear ramp-up duration (days).'
           END IF
 # endif
 #endif
