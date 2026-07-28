@@ -545,66 +545,6 @@
       END DO
 # endif
 !
-# ifdef UV_BODYFORCE
-!
-!-----------------------------------------------------------------------
-!  Apply a uniform body force (acceleration) to the full water column
-!  in both x (u) and y (v) directions. A linear ramp from 0 to full
-!  strength is applied between bfrc_tstr and bfrc_tend (days). If
-!  bfrc_tend <= bfrc_tstr the force is at full strength at all times.
-!
-!  The ru/rv contribution is F * Hz / (pm * pn) at each u/v-point so
-!  that after step3d_uv divides by Hz the net velocity update is:
-!    du = dt * bfrc_ramp * bfrc_u   (m/s per time step)
-!    dv = dt * bfrc_ramp * bfrc_v
-!-----------------------------------------------------------------------
-!
-!  Compute the ramp factor (0 to 1).
-!
-      IF (bfrc_tend(ng).le.bfrc_tstr(ng)) THEN
-        bfrc_ramp=1.0_r8
-      ELSE IF (tdays(ng).le.bfrc_tstr(ng)) THEN
-        bfrc_ramp=0.0_r8
-      ELSE IF (tdays(ng).ge.bfrc_tend(ng)) THEN
-        bfrc_ramp=1.0_r8
-      ELSE
-        bfrc_ramp=REAL((tdays(ng)-bfrc_tstr(ng))/                      &
-     &                 (bfrc_tend(ng)-bfrc_tstr(ng)), r8)
-      END IF
-!
-!  Apply uniform body force in the x (xi) direction.
-!
-      IF (bfrc_u(ng).ne.0.0_r8) THEN
-        DO k=1,N(ng)
-          DO j=Jstr,Jend
-            DO i=IstrU,Iend
-              cff=bfrc_ramp*bfrc_u(ng)*                                 &
-     &            0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))/                      &
-     &            (0.25_r8*(pm(i-1,j)+pm(i,j))*                         &
-     &                     (pn(i-1,j)+pn(i,j)))
-              ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+cff
-            END DO
-          END DO
-        END DO
-      END IF
-!
-!  Apply uniform body force in the y (eta) direction.
-!
-      IF (bfrc_v(ng).ne.0.0_r8) THEN
-        DO k=1,N(ng)
-          DO j=JstrV,Jend
-            DO i=Istr,Iend
-              cff=bfrc_ramp*bfrc_v(ng)*                                 &
-     &            0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))/                      &
-     &            (0.25_r8*(pm(i,j-1)+pm(i,j))*                         &
-     &                     (pn(i,j-1)+pn(i,j)))
-              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)+cff
-            END DO
-          END DO
-        END DO
-      END IF
-# endif
-!
 #  if defined VEGETATION && defined VEG_DRAG
 !
 !-----------------------------------------------------------------------
@@ -634,6 +574,97 @@
         END DO
       END DO  
 #  endif
+!
+# ifdef UV_BODYFORCE
+!
+!-----------------------------------------------------------------------
+!  Apply a uniform body force (acceleration) to the full water column
+!  in both x (u) and y (v) directions. A linear ramp from 0 to full
+!  strength is applied between bfrc_tstr and bfrc_tend (days). If
+!  bfrc_tend <= bfrc_tstr the force is at full strength at all times.
+!
+!  The ru/rv contribution is F * Hz / (pm * pn) at each u/v-point so
+!  that after step3d_uv divides by Hz the net velocity update is:
+!    du = dt * bfrc_ramp * bfrc_u   (m/s per time step)
+!    dv = dt * bfrc_ramp * bfrc_v
+!-----------------------------------------------------------------------
+!
+!  Compute the ramp factor (0 to 1).
+!
+      IF (bfrc_tend(ng).le.bfrc_tstr(ng)) THEN
+        bfrc_ramp=1.0_r8
+      ELSE IF (tdays(ng).le.bfrc_tstr(ng)) THEN
+        bfrc_ramp=0.0_r8
+      ELSE IF (tdays(ng).ge.bfrc_tend(ng)) THEN
+        bfrc_ramp=1.0_r8
+      ELSE
+        bfrc_ramp=REAL((tdays(ng)-bfrc_tstr(ng))/                      &
+     &                 (bfrc_tend(ng)-bfrc_tstr(ng)), r8)
+      END IF
+!
+!  Apply uniform body force in the x (xi) direction (u-momentum).
+!  We precompute the horizontal metric factor at U-points:
+!
+!    metric_u(i,j) = 0.25 * (pm(i-1,j)+pm(i,j)) * (pn(i-1,j)+pn(i,j))
+!
+!  so that for each k we only need thickness and the body-force amplitude.
+!
+      IF (bfrc_u(ng).ne.0.0_r8) THEN
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            ! horizontal metric at U-point (inverse area)
+            cff = 0.25_r8*(pm(i-1,j)+pm(i,j))*                          &
+     &                       (pn(i-1,j)+pn(i,j))
+            ! store factor that multiplies thickness at all k
+            Uwrk(i,j) = bfrc_ramp*bfrc_u(ng) / cff
+          END DO
+        END DO
+!
+        DO k=1,N(ng)
+          DO j=Jstr,Jend
+            DO i=IstrU,Iend
+              ! thickness averaged to U-point
+              cff1 = 0.5_r8*(Hz(i-1,j,k)+Hz(i  ,j,k))
+              ! body force contribution to ru
+              ru(i,j,k,nrhs) = ru(i,j,k,nrhs) + Uwrk(i,j)*cff1
+#  ifdef DIAGNOSTICS_UV
+              DiaRU(i,j,k,nrhs,M3vvis) = DiaRU(i,j,k,nrhs,M3vvis) +     &
+     &                                   Uwrk(i,j)*cff1
+#  endif
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Apply uniform body force in the y (eta) direction (v-momentum).
+!
+      IF (bfrc_v(ng).ne.0.0_r8) THEN
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            ! horizontal metric at V-point (inverse area)
+            cff = 0.25_r8*(pm(i,j-1)+pm(i,j))*                          &
+     &                       (pn(i,j-1)+pn(i,j))
+            ! store factor that multiplies thickness at all k
+            Vwrk(i,j) = bfrc_ramp*bfrc_v(ng) / cff
+          END DO
+        END DO
+!
+        DO k=1,N(ng)
+          DO j=JstrV,Jend
+            DO i=Istr,Iend
+              ! thickness averaged to V-point
+              cff1 = 0.5_r8*(Hz(i,j-1,k)+Hz(i  ,j,k))
+              ! body force contribution to rv
+              rv(i,j,k,nrhs) = rv(i,j,k,nrhs) + Vwrk(i,j)*cff1
+#  ifdef DIAGNOSTICS_UV
+              DiaRV(i,j,k,nrhs,M3vvis) = DiaRV(i,j,k,nrhs,M3vvis) +     &
+     &                                   Vwrk(i,j)*cff1
+#  endif
+            END DO
+          END DO
+        END DO
+      END IF
+# endif  /* UV_BODYFORCE */
 !
       K_LOOP : DO k=1,N(ng)
 
