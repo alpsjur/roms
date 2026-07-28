@@ -1101,8 +1101,8 @@
         END DO
 # endif
 
-# ifdef STRUCTURE_MIXING
-!
+# ifdef STRUCTURE_MIXING  
+! TODO: define a new str_a / (pn*pm) in the mod_grd file, and use it here to avoid the division by (pn*pm) in the loop
 !-----------------------------------------------------------------------
 !  Structure-induced drag body force (Rennau, Schimmels & Burchard 2012)
 !  G_d = -0.5 * str_cd * str_a * u * |V|
@@ -1116,8 +1116,10 @@
               v_at_u=0.25_r8*(v(i-1,j  ,k,nrhs)+v(i,j  ,k,nrhs)+        &
      &                        v(i-1,j+1,k,nrhs)+v(i,j+1,k,nrhs))
               spd=SQRT(u(i,j,k,nrhs)**2+v_at_u**2)
-              cff=0.5_r8*str_cd(ng)*str_a_u*spd*                        &
-     &            0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
+              cff = 0.5_r8*str_cd(ng)*str_a_u*spd*                      &
+     &                    0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k)) /              &
+     &                    (0.25_r8*(pm(i-1,j)+pm(i,j))*                 &
+     &                    (pn(i-1,j)+pn(i,j)))
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff*u(i,j,k,nrhs)
             END IF
           END DO
@@ -1130,8 +1132,10 @@
               u_at_v=0.25_r8*(u(i  ,j-1,k,nrhs)+u(i+1,j-1,k,nrhs)+      &
      &                        u(i  ,j  ,k,nrhs)+u(i+1,j  ,k,nrhs))
               spd=SQRT(u_at_v**2+v(i,j,k,nrhs)**2)
-              cff=0.5_r8*str_cd(ng)*str_a_v*spd*                        &
-     &            0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
+              cff = 0.5_r8*str_cd(ng)*str_a_v*spd*                      &
+     &                    0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k)) /              &
+     &                    (0.25_r8*(pm(i,j-1)+pm(i,j))*                 &
+     &                    (pn(i,j-1)+pn(i,j)))
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff*v(i,j,k,nrhs)
             END IF
           END DO
