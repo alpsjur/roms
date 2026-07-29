@@ -840,9 +840,9 @@
 !
             str_a_wpt=0.5_r8*(str_a(i,j,k)+str_a(i,j,k+1))
             IF (str_a_wpt.gt.0.0_r8) THEN
-              spd2_k =0.5_r8*((u(i,  j,k,  nstp)+u(i+1,j,k,  nstp))**2+ &
+              spd2_k =0.25_r8*((u(i,  j,k,  nstp)+u(i+1,j,k,  nstp))**2+ &
      &                        (v(i,j,  k,  nstp)+v(i,j+1,k,  nstp))**2)
-              spd2_k1=0.5_r8*((u(i,  j,k+1,nstp)+u(i+1,j,k+1,nstp))**2+ &
+              spd2_k1=0.25_r8*((u(i,  j,k+1,nstp)+u(i+1,j,k+1,nstp))**2+ &
      &                        (v(i,j,  k+1,nstp)+v(i,j+1,k+1,nstp))**2)
               spd2_wpt=0.5_r8*(spd2_k+spd2_k1)
               Pd_struct=0.5_r8*str_cd(ng)*str_a_wpt*                    &
