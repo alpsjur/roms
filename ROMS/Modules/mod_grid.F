@@ -42,6 +42,12 @@
 !  grdscl     Grid scale used to adjust horizontal mixing according    !
 !               to grid area.                                          !
 !  h          Bottom depth (m) at RHO-points.                          !
+#ifdef STRUCTURE_MIXING
+!  str_a_omn  Structure frontal area density divided by (pm*pn),       !
+!               str_a/(pm*pn), at RHO points and all vertical levels.  !
+!               Precomputed once so that STRUCTURE_MIXING drag terms   !
+!               only need to average and multiply, not divide.         !
+#endif
 !  latp       Latitude (degrees_north) at PSI-points.                  !
 !  latr       Latitude (degrees_north) at RHO-points.                  !
 !  latu       Latitude (degrees_north) at U-points.                    !
@@ -247,6 +253,9 @@
           real(r8), pointer :: Hz(:,:,:)
 # ifdef ADJUST_BOUNDARY
           real(r8), pointer :: Hz_bry(:,:,:)
+# endif
+# ifdef STRUCTURE_MIXING
+          real(r8), pointer :: str_a_omn(:,:,:)
 # endif
           real(r8), pointer :: Huon(:,:,:)
           real(r8), pointer :: Hvom(:,:,:)
@@ -574,6 +583,11 @@
 #ifdef SOLVE3D
       allocate ( GRID(ng) % Hz(LBi:UBi,LBj:UBj,N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+# ifdef STRUCTURE_MIXING
+      allocate ( GRID(ng) % str_a_omn(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+# endif
 
 # ifdef ADJUST_BOUNDARY
       allocate ( GRID(ng) % Hz_bry(LBij:UBij,N(ng),4) )
@@ -1040,6 +1054,11 @@
       IF (.not.destroy(ng, GRID(ng)%Hz, MyFile,                         &
      &                 __LINE__, 'GRID(ng)%Hz')) RETURN
 
+#  ifdef STRUCTURE_MIXING
+      IF (.not.destroy(ng, GRID(ng)%str_a_omn, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%str_a_omn')) RETURN
+#  endif
+
 #  ifdef ADJUST_BOUNDARY
       IF (.not.destroy(ng, GRID(ng)%Hz_bry, MyFile,                     &
      &                 __LINE__, 'GRID(ng)%Hz_bry')) RETURN
@@ -1452,6 +1471,9 @@
               GRID(ng) % z0_r(i,j,k) = IniVal
               GRID(ng) % z_r(i,j,k) = IniVal
               GRID(ng) % z_v(i,j,k) = IniVal
+# ifdef STRUCTURE_MIXING
+              GRID(ng) % str_a_omn(i,j,k) = IniVal
+# endif
             END DO
           END DO
           DO k=0,N(ng)

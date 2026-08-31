@@ -32,7 +32,7 @@
 # endif
       USE mod_forces
       USE mod_grid
-# if defined WEC || defined STRUCTURE_MIXING
+# ifdef WEC
       USE mod_mixing
 # endif
       USE mod_ocean
@@ -180,7 +180,7 @@
      &                 MIXING(ng) % rvstr3d,                            &
 # endif
 # ifdef STRUCTURE_MIXING
-     &                 MIXING(ng) % str_a,                              &
+     &                 GRID(ng) % str_a_omn,                             &
 # endif
      &                 COUPLING(ng) % rufrc,                            &
      &                 COUPLING(ng) % rvfrc,                            &
@@ -240,7 +240,7 @@
      &                       rustr3d, rvstr3d,                          &
 # endif
 # ifdef STRUCTURE_MIXING
-     &                       str_a,                                     &
+     &                       str_a_omn,                                 &
 # endif
      &                       rufrc, rvfrc,                              &
 # ifdef DIAGNOSTICS_UV
@@ -299,7 +299,7 @@
       real(r8), intent(in) :: rvstr3d(LBi:,LBj:,:)
 #  endif
 #  ifdef STRUCTURE_MIXING
-      real(r8), intent(in) :: str_a(LBi:,LBj:,:)
+      real(r8), intent(in) :: str_a_omn(LBi:,LBj:,:)
 #  endif
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
@@ -350,7 +350,7 @@
       real(r8), intent(in) :: rvstr3d(LBi:UBi,LBj:UBj,N(ng))
 #  endif
 # ifdef STRUCTURE_MIXING
-      real(r8), intent(in) :: str_a(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: str_a_omn(LBi:UBi,LBj:UBj,N(ng))
 # endif
       real(r8), intent(inout) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
       real(r8), intent(inout) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
@@ -375,7 +375,7 @@
       real(r8) :: cff5, cff6, cff7, cff8
       real(r8) :: fac, fac1, fac2
 # ifdef STRUCTURE_MIXING
-      real(r8) :: str_a_u, str_a_v, v_at_u, u_at_v, spd
+      real(r8) :: str_a_omn_u, str_a_omn_v, v_at_u, u_at_v, spd
 # endif
 
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
@@ -1101,25 +1101,23 @@
         END DO
 # endif
 
-# ifdef STRUCTURE_MIXING  
-! TODO: define a new str_a / (pn*pm) in the mod_grd file, and use it here to avoid the division by (pn*pm) in the loop
+# ifdef STRUCTURE_MIXING
 !-----------------------------------------------------------------------
 !  Structure-induced drag body force (Rennau, Schimmels & Burchard 2012)
 !  G_d = -0.5 * str_cd * str_a * u * |V|
-!  str_a is averaged to u/v-points; speed is computed at u/v-points.
+!  str_a/(pm*pn) is precomputed in metrics.F (GRID(ng)%str_a_omn) and
+!  averaged here to u/v-points; speed is computed at u/v-points.
 !-----------------------------------------------------------------------
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            str_a_u=0.5_r8*(str_a(i-1,j,k)+str_a(i,j,k))
-            IF (str_a_u.gt.0.0_r8) THEN
+            str_a_omn_u=0.5_r8*(str_a_omn(i-1,j,k)+str_a_omn(i,j,k))
+            IF (str_a_omn_u.gt.0.0_r8) THEN
               v_at_u=0.25_r8*(v(i-1,j  ,k,nrhs)+v(i,j  ,k,nrhs)+        &
      &                        v(i-1,j+1,k,nrhs)+v(i,j+1,k,nrhs))
               spd=SQRT(u(i,j,k,nrhs)**2+v_at_u**2)
-              cff = 0.5_r8*str_cd(ng)*str_a_u*spd*                      &
-     &                    0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k)) /              &
-     &                    (0.25_r8*(pm(i-1,j)+pm(i,j))*                 &
-     &                    (pn(i-1,j)+pn(i,j)))
+              cff = 0.5_r8*str_cd(ng)*str_a_omn_u*spd*                  &
+     &                    0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff*u(i,j,k,nrhs)
             END IF
           END DO
@@ -1127,15 +1125,13 @@
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
-            str_a_v=0.5_r8*(str_a(i,j-1,k)+str_a(i,j,k))
-            IF (str_a_v.gt.0.0_r8) THEN
+            str_a_omn_v=0.5_r8*(str_a_omn(i,j-1,k)+str_a_omn(i,j,k))
+            IF (str_a_omn_v.gt.0.0_r8) THEN
               u_at_v=0.25_r8*(u(i  ,j-1,k,nrhs)+u(i+1,j-1,k,nrhs)+      &
      &                        u(i  ,j  ,k,nrhs)+u(i+1,j  ,k,nrhs))
               spd=SQRT(u_at_v**2+v(i,j,k,nrhs)**2)
-              cff = 0.5_r8*str_cd(ng)*str_a_v*spd*                      &
-     &                    0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k)) /              &
-     &                    (0.25_r8*(pm(i,j-1)+pm(i,j))*                 &
-     &                    (pn(i,j-1)+pn(i,j)))
+              cff = 0.5_r8*str_cd(ng)*str_a_omn_v*spd*                  &
+     &                    0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff*v(i,j,k,nrhs)
             END IF
           END DO
