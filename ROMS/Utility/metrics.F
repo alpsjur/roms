@@ -25,7 +25,7 @@
 !
       USE mod_param
       USE mod_grid
-#if defined DIFF_3DCOEF || defined VISC_3DCOEF
+#if defined DIFF_3DCOEF || defined VISC_3DCOEF || defined STRUCTURE_MIXING
       USE mod_mixing
 #endif
       USE mod_ocean
@@ -87,6 +87,10 @@
      &                   GRID(ng) % on_v,                               &
      &                   GRID(ng) % fomn,                               &
      &                   GRID(ng) % omn,                                &
+#ifdef STRUCTURE_MIXING
+     &                   MIXING(ng) % str_a,                            &
+     &                   GRID(ng) % str_a_omn,                          &
+#endif
      &                   GRID(ng) % pnom_p,                             &
      &                   GRID(ng) % pnom_r,                             &
      &                   GRID(ng) % pnom_u,                             &
@@ -130,6 +134,9 @@
      &                         om_p, om_r, om_u, om_v,                  &
      &                         on_p, on_r, on_u, on_v,                  &
      &                         fomn, omn,                               &
+#ifdef STRUCTURE_MIXING
+     &                         str_a, str_a_omn,                       &
+#endif
      &                         pnom_p, pnom_r, pnom_u, pnom_v,          &
      &                         pmon_p, pmon_r, pmon_u, pmon_v)
 !***********************************************************************
@@ -151,8 +158,14 @@
       USE distribute_mod, ONLY : mp_reduce
 #endif
       USE exchange_2d_mod
+# ifdef STRUCTURE_MIXING
+      USE exchange_3d_mod, ONLY : exchange_r3d_tile
+# endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
+# ifdef STRUCTURE_MIXING
+      USE mp_exchange_mod, ONLY : mp_exchange3d
+# endif
 #endif
 #ifdef SOLVE3D
       USE set_depth_mod, ONLY : set_depth_tile
@@ -204,6 +217,10 @@
       real(r8), intent(out) :: on_v(LBi:,LBj:)
       real(r8), intent(out) :: fomn(LBi:,LBj:)
       real(r8), intent(out) :: omn(LBi:,LBj:)
+# ifdef STRUCTURE_MIXING
+      real(r8), intent(in) :: str_a(LBi:,LBj:,:)
+      real(r8), intent(out) :: str_a_omn(LBi:,LBj:,:)
+# endif
       real(r8), intent(out) :: pnom_p(LBi:,LBj:)
       real(r8), intent(out) :: pnom_r(LBi:,LBj:)
       real(r8), intent(out) :: pnom_u(LBi:,LBj:)
@@ -261,6 +278,10 @@
       real(r8), intent(out) :: on_v(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: fomn(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: omn(LBi:UBi,LBj:UBj)
+# ifdef STRUCTURE_MIXING
+      real(r8), intent(in) :: str_a(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(out) :: str_a_omn(LBi:UBi,LBj:UBj,N(ng))
+# endif
       real(r8), intent(out) :: pnom_p(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: pnom_r(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: pnom_u(LBi:UBi,LBj:UBj)
@@ -353,6 +374,23 @@
         END DO
       END DO
 !
+# ifdef STRUCTURE_MIXING
+!-----------------------------------------------------------------------
+!  Compute structure frontal area density divided by (pm*pn),
+!  str_a/(pm*pn), at RHO-points. This is precomputed once here so that
+!  STRUCTURE_MIXING drag terms (rhs3d.F) only need to average this
+!  field to U/V-points, avoiding a division in the time-step loop.
+!-----------------------------------------------------------------------
+!
+      DO k=1,N(ng)
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            str_a_omn(i,j,k)=str_a(i,j,k)*omn(i,j)
+          END DO
+        END DO
+      END DO
+# endif
+!
 !  Exchange boundary information.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -368,6 +406,11 @@
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          fomn)
+# ifdef STRUCTURE_MIXING
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          str_a_omn)
+# endif
       END IF
 
 #ifdef DISTRIBUTE
@@ -375,6 +418,12 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    om_r, on_r, omn, fomn)
+# ifdef STRUCTURE_MIXING
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
+     &                    str_a_omn)
+# endif
 #endif
 !
 !-----------------------------------------------------------------------
