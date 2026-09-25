@@ -182,6 +182,10 @@
 # ifdef STRUCTURE_MIXING
      &                 GRID(ng) % str_a_omn,                             &
 # endif
+# ifdef UV_BODYFORCE
+     &                 GRID(ng) % bfrc_u,                                &
+     &                 GRID(ng) % bfrc_v,                                &
+# endif
      &                 COUPLING(ng) % rufrc,                            &
      &                 COUPLING(ng) % rvfrc,                            &
 # ifdef DIAGNOSTICS_UV
@@ -242,6 +246,9 @@
 # ifdef STRUCTURE_MIXING
      &                       str_a_omn,                                 &
 # endif
+# ifdef UV_BODYFORCE
+     &                       bfrc_u, bfrc_v,                            &
+# endif
      &                       rufrc, rvfrc,                              &
 # ifdef DIAGNOSTICS_UV
      &                       DiaRUfrc, DiaRVfrc,                        &
@@ -301,6 +308,10 @@
 #  ifdef STRUCTURE_MIXING
       real(r8), intent(in) :: str_a_omn(LBi:,LBj:,:)
 #  endif
+#  ifdef UV_BODYFORCE
+      real(r8), intent(in) :: bfrc_u(LBi:,LBj:,:)
+      real(r8), intent(in) :: bfrc_v(LBi:,LBj:,:)
+#  endif
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 #  ifdef DIAGNOSTICS_UV
@@ -351,6 +362,10 @@
 #  endif
 # ifdef STRUCTURE_MIXING
       real(r8), intent(in) :: str_a_omn(LBi:UBi,LBj:UBj,N(ng))
+# endif
+# ifdef UV_BODYFORCE
+      real(r8), intent(in) :: bfrc_u(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: bfrc_v(LBi:UBi,LBj:UBj,N(ng))
 # endif
       real(r8), intent(inout) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
       real(r8), intent(inout) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
@@ -578,15 +593,37 @@
 # ifdef UV_BODYFORCE
 !
 !-----------------------------------------------------------------------
-!  Apply a uniform body force (acceleration) to the full water column
-!  in both x (u) and y (v) directions. A linear ramp from 0 to full
-!  strength is applied between bfrc_tstr and bfrc_tend (days). If
-!  bfrc_tend <= bfrc_tstr the force is at full strength at all times.
+!  Apply a prescribed body force (acceleration), which may vary with
+!  depth (velocity shear), to the water column in both x (u) and y (v)
+!  directions. bfrc_u/bfrc_v (m/s2) are read from the grid NetCDF file
+!  (GRID(ng)%bfrc_u/bfrc_v; see get_grid.F) and are typically computed
+!  offline (tools/make_grd.py) from a target steady-state velocity
+!  profile u_target(z) as:
+!
+!    bfrc = u_target * bfrc_cd
+!
+!  A linear ramp from 0 to full strength is applied between bfrc_tstr
+!  and bfrc_tend (days). If bfrc_tend <= bfrc_tstr the force is at full
+!  strength at all times.
+!
+!  In addition to the prescribed force, a linear (Rayleigh) damping
+!  term -bfrc_cd*u is applied at every level, both inside and outside
+!  structures (str_a>0 or =0). This is what makes the prescribed
+!  bfrc = u_target*bfrc_cd reach the target velocity u_target in steady
+!  state: du/dt = bfrc_ramp*bfrc - bfrc_cd*u -> u_inf = bfrc_ramp*u_target.
+!  bfrc_cd is a separate parameter from the structure drag coefficient
+!  str_cd (STRUCTURE_MIXING) -- it is a linear rate (1/s), not a
+!  quadratic drag coefficient, so it must satisfy bfrc_cd*DT << 1 for
+!  numerical stability of this explicit term (unlike str_cd, which is
+!  self-limiting through the quadratic |u| dependence below). Inside
+!  structures (str_a>0) this linear damping coexists with the
+!  pre-existing quadratic STRUCTURE_MIXING drag, so the target velocity
+!  is only reached exactly where str_a=0.
 !
 !  The ru/rv contribution is F * Hz / (pm * pn) at each u/v-point so
 !  that after step3d_uv divides by Hz the net velocity update is:
-!    du = dt * bfrc_ramp * bfrc_u   (m/s per time step)
-!    dv = dt * bfrc_ramp * bfrc_v
+!    du = dt * (bfrc_ramp*bfrc_u - bfrc_cd*u)   (m/s per time step)
+!    dv = dt * (bfrc_ramp*bfrc_v - bfrc_cd*v)
 !-----------------------------------------------------------------------
 !
 !  Compute the ramp factor (0 to 1).
@@ -602,68 +639,51 @@
      &                 (bfrc_tend(ng)-bfrc_tstr(ng)), r8)
       END IF
 !
-!  Apply uniform body force in the x (xi) direction (u-momentum).
-!  We precompute the horizontal metric factor at U-points:
+!  Apply prescribed body force plus linear damping in the x (xi)
+!  direction (u-momentum).
 !
-!    metric_u(i,j) = 0.25 * (pm(i-1,j)+pm(i,j)) * (pn(i-1,j)+pn(i,j))
-!
-!  so that for each k we only need thickness and the body-force amplitude.
-!
-      IF (bfrc_u(ng).ne.0.0_r8) THEN
+      DO k=1,N(ng)
         DO j=Jstr,Jend
           DO i=IstrU,Iend
             ! horizontal metric at U-point (inverse area)
             cff = 0.25_r8*(pm(i-1,j)+pm(i,j))*                          &
      &                       (pn(i-1,j)+pn(i,j))
-            ! store factor that multiplies thickness at all k
-            Uwrk(i,j) = bfrc_ramp*bfrc_u(ng) / cff
-          END DO
-        END DO
-!
-        DO k=1,N(ng)
-          DO j=Jstr,Jend
-            DO i=IstrU,Iend
-              ! thickness averaged to U-point
-              cff1 = 0.5_r8*(Hz(i-1,j,k)+Hz(i  ,j,k))
-              ! body force contribution to ru
-              ru(i,j,k,nrhs) = ru(i,j,k,nrhs) + Uwrk(i,j)*cff1
+            ! thickness averaged to U-point
+            cff1 = 0.5_r8*(Hz(i-1,j,k)+Hz(i  ,j,k))
+            ! prescribed force minus linear (Rayleigh) damping
+            cff2 = bfrc_ramp*bfrc_u(i,j,k) -                             &
+     &             bfrc_cd(ng)*u(i,j,k,nrhs)
+            ru(i,j,k,nrhs) = ru(i,j,k,nrhs) + cff2*cff1/cff
 #  ifdef DIAGNOSTICS_UV
-              DiaRU(i,j,k,nrhs,M3vvis) = DiaRU(i,j,k,nrhs,M3vvis) +     &
-     &                                   Uwrk(i,j)*cff1
+            DiaRU(i,j,k,nrhs,M3vvis) = DiaRU(i,j,k,nrhs,M3vvis) +      &
+     &                                 cff2*cff1/cff
 #  endif
-            END DO
           END DO
         END DO
-      END IF
+      END DO
 !
-!  Apply uniform body force in the y (eta) direction (v-momentum).
+!  Apply prescribed body force plus linear damping in the y (eta)
+!  direction (v-momentum).
 !
-      IF (bfrc_v(ng).ne.0.0_r8) THEN
+      DO k=1,N(ng)
         DO j=JstrV,Jend
           DO i=Istr,Iend
             ! horizontal metric at V-point (inverse area)
             cff = 0.25_r8*(pm(i,j-1)+pm(i,j))*                          &
      &                       (pn(i,j-1)+pn(i,j))
-            ! store factor that multiplies thickness at all k
-            Vwrk(i,j) = bfrc_ramp*bfrc_v(ng) / cff
-          END DO
-        END DO
-!
-        DO k=1,N(ng)
-          DO j=JstrV,Jend
-            DO i=Istr,Iend
-              ! thickness averaged to V-point
-              cff1 = 0.5_r8*(Hz(i,j-1,k)+Hz(i  ,j,k))
-              ! body force contribution to rv
-              rv(i,j,k,nrhs) = rv(i,j,k,nrhs) + Vwrk(i,j)*cff1
+            ! thickness averaged to V-point
+            cff1 = 0.5_r8*(Hz(i,j-1,k)+Hz(i  ,j,k))
+            ! prescribed force minus linear (Rayleigh) damping
+            cff2 = bfrc_ramp*bfrc_v(i,j,k) -                             &
+     &             bfrc_cd(ng)*v(i,j,k,nrhs)
+            rv(i,j,k,nrhs) = rv(i,j,k,nrhs) + cff2*cff1/cff
 #  ifdef DIAGNOSTICS_UV
-              DiaRV(i,j,k,nrhs,M3vvis) = DiaRV(i,j,k,nrhs,M3vvis) +     &
-     &                                   Vwrk(i,j)*cff1
+            DiaRV(i,j,k,nrhs,M3vvis) = DiaRV(i,j,k,nrhs,M3vvis) +      &
+     &                                 cff2*cff1/cff
 #  endif
-            END DO
           END DO
         END DO
-      END IF
+      END DO
 # endif  /* UV_BODYFORCE */
 !
       K_LOOP : DO k=1,N(ng)

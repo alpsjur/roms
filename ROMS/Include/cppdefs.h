@@ -31,9 +31,15 @@
 **             only in idealized, high vertical resolution applications.     **
 **                                                                           **
 ** UV_ADV                  to turn ON or OFF advection terms                 **
-** UV_BODYFORCE            if applying a uniform body force (acceleration)   **
-**                           to the momentum equations in both x and y.      **
-**                           Magnitude and ramp time are set in ocean.in.    **
+** UV_BODYFORCE            if applying a prescribed body force               **
+**                           (acceleration) to the momentum equations in     **
+**                           both x and y, optionally varying with depth     **
+**                           (velocity shear). The spatial field is read     **
+**                           from the grid NetCDF file (bfrc_u/bfrc_v);      **
+**                           ramp start/end times and the linear damping     **
+**                           rate (bfrc_cd, 1/s, must satisfy               **
+**                           bfrc_cd*DT << 1 for stability) are set in       **
+**                           ocean.in.                                       **
 ** UV_COR                  to turn ON or OFF Coriolis term                   **
 ** UV_U3ADV_SPLIT          if 3rd-order upstream split momentum advection    **
 ** UV_C2ADVECTION          to turn ON or OFF 2nd-order centered advection    **

@@ -48,6 +48,13 @@
 !               Precomputed once so that STRUCTURE_MIXING drag terms   !
 !               only need to average and multiply, not divide.         !
 #endif
+#ifdef UV_BODYFORCE
+!  bfrc_u     Prescribed body force (m/s2) at U-points and all         !
+!               vertical levels, allowing an arbitrary depth profile.  !
+!               Read from the grid NetCDF file. Optional: defaults to  !
+!               zero if not found (no forcing).                        !
+!  bfrc_v     As bfrc_u, but at V-points, y (eta) direction.            !
+#endif
 !  latp       Latitude (degrees_north) at PSI-points.                  !
 !  latr       Latitude (degrees_north) at RHO-points.                  !
 !  latu       Latitude (degrees_north) at U-points.                    !
@@ -256,6 +263,10 @@
 # endif
 # ifdef STRUCTURE_MIXING
           real(r8), pointer :: str_a_omn(:,:,:)
+# endif
+# ifdef UV_BODYFORCE
+          real(r8), pointer :: bfrc_u(:,:,:)
+          real(r8), pointer :: bfrc_v(:,:,:)
 # endif
           real(r8), pointer :: Huon(:,:,:)
           real(r8), pointer :: Hvom(:,:,:)
@@ -586,6 +597,14 @@
 
 # ifdef STRUCTURE_MIXING
       allocate ( GRID(ng) % str_a_omn(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+# endif
+
+# ifdef UV_BODYFORCE
+      allocate ( GRID(ng) % bfrc_u(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % bfrc_v(LBi:UBi,LBj:UBj,N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 # endif
 
@@ -1059,6 +1078,13 @@
      &                 __LINE__, 'GRID(ng)%str_a_omn')) RETURN
 #  endif
 
+#  ifdef UV_BODYFORCE
+      IF (.not.destroy(ng, GRID(ng)%bfrc_u, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%bfrc_u')) RETURN
+      IF (.not.destroy(ng, GRID(ng)%bfrc_v, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%bfrc_v')) RETURN
+#  endif
+
 #  ifdef ADJUST_BOUNDARY
       IF (.not.destroy(ng, GRID(ng)%Hz_bry, MyFile,                     &
      &                 __LINE__, 'GRID(ng)%Hz_bry')) RETURN
@@ -1473,6 +1499,10 @@
               GRID(ng) % z_v(i,j,k) = IniVal
 # ifdef STRUCTURE_MIXING
               GRID(ng) % str_a_omn(i,j,k) = IniVal
+# endif
+# ifdef UV_BODYFORCE
+              GRID(ng) % bfrc_u(i,j,k) = IniVal
+              GRID(ng) % bfrc_v(i,j,k) = IniVal
 # endif
             END DO
           END DO

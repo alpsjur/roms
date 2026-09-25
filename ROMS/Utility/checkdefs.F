@@ -1313,6 +1313,13 @@
       is=LEN_TRIM(Coptions)+2
       Coptions(is:is+16)=' STRUCTURE_MIXING,'
 #endif
+#ifdef UV_BODYFORCE
+!
+      IF (Master) WRITE (stdout,20) 'UV_BODYFORCE',                     &
+     &  'Prescribed (possibly depth-varying) body force in momentum'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' UV_BODYFORCE,'
+#endif
 #ifdef GRID_EXTRACT
 !
       IF (Master) WRITE (stdout,20) 'GRID_EXTRACT',                     &

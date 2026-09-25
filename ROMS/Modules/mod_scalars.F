@@ -598,20 +598,26 @@
         integer, allocatable :: levbfrc(:)
 !
 #ifdef UV_BODYFORCE
-!  Uniform body force (acceleration, m/s2) applied to the full water
-!  column. A linear ramp from zero to full strength is applied between
-!  bfrc_tstr and bfrc_tend (days). If bfrc_tend <= bfrc_tstr the force
-!  is applied at full strength from the start.
+!  Prescribed body force (acceleration, m/s2), possibly depth-varying
+!  (velocity shear), applied to the water column. The spatial field
+!  itself is GRID(ng)%bfrc_u/bfrc_v (read from the grid NetCDF file;
+!  see get_grid.F and mod_grid.F). A linear ramp from zero to full
+!  strength is applied between bfrc_tstr and bfrc_tend (days). If
+!  bfrc_tend <= bfrc_tstr the force is applied at full strength from
+!  the start.
 !
-!    bfrc_u      Body force acceleration in the x (xi)  direction (m/s2)
-!    bfrc_v      Body force acceleration in the y (eta) direction (m/s2)
 !    bfrc_tstr   Ramp start time (days since model initialization)
 !    bfrc_tend   Ramp end   time (days since model initialization)
+!    bfrc_cd     Linear (Rayleigh) damping rate (1/s) that balances the
+!                prescribed force in steady state: bfrc = bfrc_cd *
+!                u_target. Independent of the structure drag
+!                coefficient (str_cd, STRUCTURE_MIXING) -- set it small
+!                enough that bfrc_cd*DT << 1 for numerical stability of
+!                this explicit term.
 !
-        real(r8), allocatable :: bfrc_u(:)
-        real(r8), allocatable :: bfrc_v(:)
         real(dp), allocatable :: bfrc_tstr(:)
         real(dp), allocatable :: bfrc_tend(:)
+        real(r8), allocatable :: bfrc_cd(:)
 #endif
 !
 !  Vertical coordinates transform.  Currently, there are two vertical
@@ -2368,20 +2374,16 @@
       END IF
 
 #ifdef UV_BODYFORCE
-      IF (.not.allocated(bfrc_u)) THEN
-        allocate ( bfrc_u(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(bfrc_v)) THEN
-        allocate ( bfrc_v(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(bfrc_tstr)) THEN
         allocate ( bfrc_tstr(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(bfrc_tend)) THEN
         allocate ( bfrc_tend(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(bfrc_cd)) THEN
+        allocate ( bfrc_cd(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
@@ -3741,13 +3743,11 @@
       IF (allocated(levbfrc))           deallocate ( levbfrc )
 
 #ifdef UV_BODYFORCE
-      IF (allocated(bfrc_u))            deallocate ( bfrc_u )
-
-      IF (allocated(bfrc_v))            deallocate ( bfrc_v )
-
       IF (allocated(bfrc_tstr))         deallocate ( bfrc_tstr )
 
       IF (allocated(bfrc_tend))         deallocate ( bfrc_tend )
+
+      IF (allocated(bfrc_cd))           deallocate ( bfrc_cd )
 #endif
 
       IF (allocated(Vtransform))        deallocate ( Vtransform )
@@ -4593,10 +4593,9 @@
         rx0(ng)=-Large
         rx1(ng)=-Large
 #ifdef UV_BODYFORCE
-        bfrc_u(ng)   =0.0_r8
-        bfrc_v(ng)   =0.0_r8
         bfrc_tstr(ng)=0.0_dp
         bfrc_tend(ng)=0.0_dp
+        bfrc_cd(ng)=0.0_r8
 #endif
         CLM_FILE(ng)=.FALSE.
         Lnudging(ng)=.FALSE.

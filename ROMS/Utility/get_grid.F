@@ -33,6 +33,10 @@
       USE exchange_2d_mod
 # ifdef STRUCTURE_MIXING
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
+#ifdef UV_BODYFORCE
+      USE exchange_3d_mod, ONLY : exchange_u3d_tile
+      USE exchange_3d_mod, ONLY : exchange_v3d_tile
+#endif
 # endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -2327,6 +2331,94 @@
       ELSE
         IF (Master) WRITE (stdout,*)                                      &
      &    ' WARNING: str_a not found in grid file; str_a set to zero.'
+      END IF
+# endif
+
+# ifdef UV_BODYFORCE
+!
+!-----------------------------------------------------------------------
+!  Read in the prescribed body-force acceleration profile (m/s2) at
+!  U- and V-points, allowing an arbitrary depth dependence (velocity
+!  shear). Both fields are optional: if absent from the grid file, they
+!  remain zero (no forcing), matching pre-UV_BODYFORCE behavior.
+!-----------------------------------------------------------------------
+!
+      IF (find_string(var_name, n_var, 'bfrc_u', vindex)) THEN
+        gtype=u3dvar
+        status=nf_fread3d(ng, model, ncname, GRD(ng)%ncid,               &
+     &                    'bfrc_u', var_id(vindex),                       &
+     &                    0, gtype, Vsize,                                &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                  &
+     &                    Fscl, Fmin, Fmax,                               &
+#  ifdef MASKING
+     &                    GRID(ng) % umask,                               &
+#  endif
+     &                    GRID(ng) % bfrc_u)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) WRITE (stdout,40) 'bfrc_u', TRIM(ncname)
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN
+            WRITE (stdout,30) 'body-force acceleration: bfrc_u',        &
+     &                        ng, TRIM(ncname), Fmin, Fmax
+          END IF
+        END IF
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_u3d_tile (ng, tile,                               &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                            GRID(ng) % bfrc_u)
+        END IF
+#  ifdef DISTRIBUTE
+        CALL mp_exchange3d (ng, tile, model, 1,                           &
+     &                      LBi, UBi, LBj, UBj, 1, N(ng),                &
+     &                      NghostPoints,                                 &
+     &                      EWperiodic(ng), NSperiodic(ng),               &
+     &                      GRID(ng) % bfrc_u)
+#  endif
+      ELSE
+        IF (Master) WRITE (stdout,*)                                      &
+     &    ' WARNING: bfrc_u not found in grid file; bfrc_u set to zero.'
+      END IF
+!
+      IF (find_string(var_name, n_var, 'bfrc_v', vindex)) THEN
+        gtype=v3dvar
+        status=nf_fread3d(ng, model, ncname, GRD(ng)%ncid,               &
+     &                    'bfrc_v', var_id(vindex),                       &
+     &                    0, gtype, Vsize,                                &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                  &
+     &                    Fscl, Fmin, Fmax,                               &
+#  ifdef MASKING
+     &                    GRID(ng) % vmask,                               &
+#  endif
+     &                    GRID(ng) % bfrc_v)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) WRITE (stdout,40) 'bfrc_v', TRIM(ncname)
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN
+            WRITE (stdout,30) 'body-force acceleration: bfrc_v',        &
+     &                        ng, TRIM(ncname), Fmin, Fmax
+          END IF
+        END IF
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_v3d_tile (ng, tile,                               &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                            GRID(ng) % bfrc_v)
+        END IF
+#  ifdef DISTRIBUTE
+        CALL mp_exchange3d (ng, tile, model, 1,                           &
+     &                      LBi, UBi, LBj, UBj, 1, N(ng),                &
+     &                      NghostPoints,                                 &
+     &                      EWperiodic(ng), NSperiodic(ng),               &
+     &                      GRID(ng) % bfrc_v)
+#  endif
+      ELSE
+        IF (Master) WRITE (stdout,*)                                      &
+     &    ' WARNING: bfrc_v not found in grid file; bfrc_v set to zero.'
       END IF
 # endif
 !
