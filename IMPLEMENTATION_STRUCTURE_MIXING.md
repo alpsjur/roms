@@ -50,7 +50,7 @@ $$G_d^u = -\tfrac{1}{2} C_D\, a\, u\, \sqrt{u^2+v^2}, \qquad
 
 where:
 - $C_D$ — drag coefficient (dimensionless);
-- $a$ \[m$^{-1}$\] — frontal area density of the cylinders: $a = X d / A_\text{cell}$  
+- $a$ [m $^{-1}$] — frontal area density of the cylinders: $a = X d / A_\text{cell}$  
   ($X$ = number of cylinders, $d$ = cylinder diameter, $A_\text{cell}$ = horizontal cell area).
 
 Energy extracted from the mean flow:
@@ -148,13 +148,13 @@ In the user's application header file (e.g. `mycase.h`):
 
 Two new scalars per grid, following the `gls_c1`/`gls_c2` pattern:
 
-| Parameter | Fortran name | `.in` keyword | Typical value | Description |
+| Parameter | Fortran name | `.in` keyword | Description |
 |---|---|---|---|---|
-| Cylinder drag coefficient | `str_cd` | `STR_CD` | 1.0 | $C_D$ in the drag formula |
-| GLS structure-drag coeff. | `gls_c4` | `GLS_C4` | 1.0 | $c_{\psi4}$ in the $\psi$ equation |
+| Cylinder drag coefficient | `str_cd` | `STR_CD` | $C_D$ in the drag formula |
+| GLS structure-drag coeff. | `gls_c4` | `GLS_C4` | $c_{\psi4}$ in the $\psi$ equation |
 
-`gls_c4 = 1.0` is recommended for k-ε by Rennau et al. (2012). It controls how strongly
-the structure drag modifies the turbulent length scale.
+Rennau et al. (2012) consider two `gls_c4` values for k-ε. It controls how strongly
+the structure drag modifies the turbulent length scale. 
 
 ---
 
@@ -806,28 +806,23 @@ grid scale and `str_a` is a user-specified static field.
 2. **Single-column test:** Non-zero `str_a` in one column only. Verify:
    - Current is reduced in layers with non-zero `str_a`.
    - TKE and mixing coefficients are enhanced in those layers.
-   - All other columns are unaffected.
 
-3. **Blockage-ratio sanity check:** Compute `str_a * Hz` at the structure location.
-   This is the dimensionless frontal blockage (fraction of column blocked). For the
-   drag parametrization to be valid, this should typically be well below 0.5.
-
-4. **Energy budget test:** Confirm that the domain-integrated drag power extracted by the
+3. **Energy budget test:** Confirm that the domain-integrated drag power extracted by the
    momentum equation (sum of $P_d \cdot Hz \cdot dx \cdot dy$) approximately equals the
    domain-integrated TKE injection (within the approximation noted in §12).
 
-5. **Idealized channel test:** Run to steady state with a structure zone at mid-water.
+4. **Idealized channel test:** Run to steady state with a structure zone at mid-water.
    Verify velocity reduction in the structure zone and enhanced mixing above/below.
 
-6. **Qualitative comparison with Rennau et al. (2012):** Their Figure 4 shows reduced
-   inflow in an idealized Baltic inlet. Reproduce the qualitative behaviour.
+5. **Qualitative comparison with Rennau et al. (2012):** Their Figure 4 shows reduced
+   inflow in an idealized Baltic inlet. Reproduce the qualitative behaviour?
 
 ---
 
 ## 14. Things to Keep in Mind
 
 1. **All GLS coefficient values are closure-dependent.**
-   `gls_c4 = 1.0` is for k-ε. For k-ω, a different value may be appropriate. Exposing
+   Rennau et al. (2012) values for `gls_c4` are for k-ε. For k-ω or gen, a different value may be appropriate. Exposing
    `gls_c4` as a free parameter is exactly what is needed to explore this.
 
 2. **`MY25_MIXING` is out of scope.**
@@ -868,23 +863,19 @@ grid scale and `str_a` is a user-specified static field.
    Follow ROMS formatting: 72-character lines with `&` continuation, `! ` comments,
    CPP guards with one space (`# ifdef`, `# endif`), lowercase variable names.
 
-10. **Version control.**
-    Keep the implementation on a dedicated feature branch. Commit logically by file
-    (one commit per modified file) to simplify review and debugging.
 
-11. **Floating offshore wind turbines — surface proximity.**
+10. **Floating offshore wind turbines — surface proximity.**
     When structures are near the surface (e.g. semi-submersible floaters), the structure
     drag production `Pd_struct` is injected into TKE/GLS at W-points near k=N. This is
     physically correct and the code handles it without any changes. However, note that the
     GLS surface boundary conditions set `tke(i,j,N,nnew)` and `gls(i,j,N,nnew)` as
     Dirichlet conditions based on wind stress. The production loop runs only over interior
     W-points k=1..N-1, so the surface BC itself is not overridden. Structure production
-    in the top rho-layer (k=N) contributes via W-point k=N-1, which is correct.
+    in the top rho-layer (k=N) contributes via W-point k=N-1.
     The net effect is that structure-induced mixing adds to (not replaces) wind-driven
     near-surface turbulence.
 
-12. **Rennau et al. (2012) is for bottom-mounted structures.**
-    The reference paper deals with bridge piers in the Fehmarn Belt. For floating wind
-    turbine applications the physics is the same (cylinder drag + GLS injection), but the
-    depth range is different. The coefficient `gls_c4` may need recalibration for floating
-    structures; using `gls_c4 = 1.0` as a starting point is reasonable.
+11. **Rennau et al. (2012) is for bottom-mounted structures.**
+    The reference paper deals with bottom-mounted structures. For floating wind
+    turbine applications the physics is assumed to be the same (cylinder drag + GLS injection), but the
+    depth range is different. 
