@@ -42,9 +42,8 @@ applied, no assumptions about orientation.
 ## 2. Requirements
 
 - `STRUCTURE_MIXING` **requires** `GLS_MIXING` . It is not implemented for for example `MY25_MIXING`. This is enforced
-  at compile-check time — ROMS will refuse to run otherwise.
-- Forward (nonlinear) model only. There's no tangent-linear/adjoint support,
-  so it can't currently be used with 4D-Var.
+  at compile-check time. ROMS will refuse to run otherwise.
+- Forward (nonlinear) model only. There's no tangent-linear/adjoint support, so it can't currently be used with 4D-Var.
 
 ---
 
@@ -70,7 +69,7 @@ coefficients are closure-dependent, so if you switch closures it should be calib
 
 ### c) A new 3D field in your grid file: `str_a`
 
-This is where the structures actually live. You need to add a variable
+This is where the structures live. You need to add a variable
 called `str_a` to your ROMS grid NetCDF file:
 
 | | |
@@ -78,17 +77,15 @@ called `str_a` to your ROMS grid NetCDF file:
 | Dimensions | `(s_rho, eta_rho, xi_rho)` |
 | Units | m⁻¹ |
 | Meaning | frontal area density, `a = X·d / A_cell` |
-| Where structures are absent | `0.0` |
+| No structures value | `0.0` |
 | Land cells | should also be `0.0` (masked out) |
 
-`str_a` is **optional** — if it isn't found in the grid file, ROMS just
-sets it to zero everywhere and prints a warning; the run behaves exactly
+If `str_a` isn't found in the grid file, ROMS just
+sets it to zero everywhere and print a warning. The run then behaves exactly
 like `STRUCTURE_MIXING` was off.
 
-There's no built-in tool in ROMS to build this field for you — you'll need
-to compute it yourself and add it to the grid file. The vertical levels
-you populate with nonzero values determine where the structure "lives"
-(all levels for a monopile, top levels for a floating structure, etc.).
+There's no built-in tool in ROMS to build this field. You'll need
+to compute it yourself and add it to the grid file. The vertical levels you populate with nonzero values determine where the structure "lives" (all levels for a monopile, top levels for a floating structure, etc.).
 
 ---
 
