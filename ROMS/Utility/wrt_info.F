@@ -689,6 +689,11 @@
      &                      gls_c4(ng), (/0/), (/0/),                   &
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      CALL netcdf_put_ivar (ng, model, ncname, 'str_ramp',              &
+     &                      str_ramp(ng), (/0/), (/0/),                 &
+     &                      ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 #endif
 #ifdef WEC
@@ -4060,6 +4065,11 @@
 
       CALL pio_netcdf_put_fvar (ng, model, ncname, 'gls_c4',            &
      &                          gls_c4(ng), (/0/), (/0/),               &
+     &                          pioFile = pioFile)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      CALL pio_netcdf_put_ivar (ng, model, ncname, 'str_ramp',          &
+     &                          str_ramp(ng), (/0/), (/0/),             &
      &                          pioFile = pioFile)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif

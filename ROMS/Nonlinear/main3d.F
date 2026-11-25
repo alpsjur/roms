@@ -170,6 +170,9 @@
 !  Local variable declarations.
 !
       logical :: DoNestLayer, Time_Step
+# ifdef STRUCTURE_MIXING
+      real(dp) :: str_Tramp, str_tnow
+# endif
 !
       integer :: Nsteps, Rsteps
       integer :: ig, il, istep, ng, nl, tile
@@ -232,6 +235,24 @@
               time4jedi(ng)=time4jedi(ng)+dt(ng)
 # endif
               tdays(ng)=time(ng)*sec2day
+# ifdef STRUCTURE_MIXING
+!
+!  Ramp-up factor for structure drag and mixing: smooth (cosine) rise
+!  from 0 to 1 over str_ramp time-steps, measured from DSTART.
+!
+              IF (str_ramp(ng).gt.0) THEN
+                str_Tramp=REAL(str_ramp(ng),dp)*dt(ng)
+                str_tnow=time(ng)-dstart*day2sec
+                IF (str_tnow.ge.str_Tramp) THEN
+                  str_fac(ng)=1.0_r8
+                ELSE
+                  str_fac(ng)=0.5_dp*(1.0_dp-                           &
+     &                        COS(pi*MAX(str_tnow,0.0_dp)/str_Tramp))
+                END IF
+              ELSE
+                str_fac(ng)=1.0_r8
+              END IF
+# endif
               IF (step_counter(ng).eq.Rsteps) Time_Step=.FALSE.
             END DO
 !

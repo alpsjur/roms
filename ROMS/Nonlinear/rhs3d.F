@@ -1230,7 +1230,8 @@
               v_at_u=0.25_r8*(v(i-1,j  ,k,nrhs)+v(i,j  ,k,nrhs)+        &
      &                        v(i-1,j+1,k,nrhs)+v(i,j+1,k,nrhs))
               spd=SQRT(u(i,j,k,nrhs)**2+v_at_u**2)
-              cff = 0.5_r8*str_cd(ng)*str_a_omn_u*spd*                  &
+              cff = 0.5_r8*str_cd(ng)*str_fac(ng)*                      &
+     &                    str_a_omn_u*spd*                          &
      &                    0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff*u(i,j,k,nrhs)
             END IF
@@ -1244,7 +1245,8 @@
               u_at_v=0.25_r8*(u(i  ,j-1,k,nrhs)+u(i+1,j-1,k,nrhs)+      &
      &                        u(i  ,j  ,k,nrhs)+u(i+1,j  ,k,nrhs))
               spd=SQRT(u_at_v**2+v(i,j,k,nrhs)**2)
-              cff = 0.5_r8*str_cd(ng)*str_a_omn_v*spd*                  &
+              cff = 0.5_r8*str_cd(ng)*str_fac(ng)*                      &
+     &                    str_a_omn_v*spd*                          &
      &                    0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff*v(i,j,k,nrhs)
             END IF

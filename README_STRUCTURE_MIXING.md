@@ -63,7 +63,14 @@ Add these next to the other `GLS_*` coefficients:
 ```
     STR_CD == 0.63d0        ! cylinder drag coefficient C_D
     GLS_C4 == 1.4d0         ! structure-drag GLS coefficient c_psi4
+  STR_RAMP == 2160          ! ramp-up length [time-steps], 0 = no ramp
 ```
+
+`STR_RAMP` avoids an initial shock when starting from a state without
+structures. Drag and TKE/GLS injection are both multiplied by a factor
+`0.5*(1-cos(pi*t/T))` rising smoothly from 0 to 1, with `T = STR_RAMP*DT` and
+`t` measured from `DSTART`. A restart continues the ramp as long as `DSTART`
+is kept at the original start day. Example: DT = 10 s and 6 h gives 2160.
 `GLS_C4 = 1.4` is what Rennau et al. (2012) used as realistic mixing for k-ε. Since GLS
 coefficients are closure-dependent, so if you switch closures it should be calibrated.
 
