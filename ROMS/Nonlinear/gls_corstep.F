@@ -845,7 +845,7 @@
               spd2_k1=0.25_r8*((u(i,  j,k+1,nstp)+u(i+1,j,k+1,nstp))**2+ &
      &                        (v(i,j,  k+1,nstp)+v(i,j+1,k+1,nstp))**2)
               spd2_wpt=0.5_r8*(spd2_k+spd2_k1)
-              Pd_struct=0.5_r8*str_cd(ng)*str_a_wpt*                    &
+              Pd_struct=0.5_r8*str_cd(ng)*str_fac(ng)*str_a_wpt*        &
      &                  spd2_wpt*SQRT(MAX(spd2_wpt,0.0_r8))
               tke(i,j,k,nnew)=tke(i,j,k,nnew)+dt(ng)*cff*Pd_struct
               gls(i,j,k,nnew)=gls(i,j,k,nnew)+                         &

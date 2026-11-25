@@ -1960,6 +1960,13 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      Vinfo( 1)='str_ramp'
+      Vinfo( 2)='structure ramp-up length (time-steps)'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 #endif
 #ifdef WEC
@@ -5518,6 +5525,13 @@
       Vinfo( 1)='gls_c4'
       Vinfo( 2)='structure production coefficient'
       status=def_var(ng, model, pioFile, pioVar, PIO_TYPE,              &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      Vinfo( 1)='str_ramp'
+      Vinfo( 2)='structure ramp-up length (time-steps)'
+      status=def_var(ng, model, pioFile, pioVar, PIO_int,               &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN

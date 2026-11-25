@@ -1775,10 +1775,14 @@
 ! Rennau et al. (2012).
 !    str_cd        Structure cylinder drag coefficient (non-dimensional).
 !    gls_c4        Structure-drag GLS coefficient (non-dimensional).
+!    str_ramp      Ramp-up length of structure drag/mixing (time-steps).
+!    str_fac       Current ramp factor, 0 to 1 (non-dimensional).
 !
 # ifdef STRUCTURE_MIXING
+        integer, allocatable :: str_ramp(:)
         real(r8), allocatable :: str_cd(:)
         real(r8), allocatable :: gls_c4(:)
+        real(r8), allocatable :: str_fac(:)
 # endif
 #ifdef GLS_MIXING
 # if defined CANUTO_A || defined CANUTO_B
@@ -3449,6 +3453,14 @@
         allocate ( gls_c4(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+      IF (.not.allocated(str_ramp)) THEN
+        allocate ( str_ramp(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(str_fac)) THEN
+        allocate ( str_fac(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 # endif
       IF (.not.allocated(gls_Kmin)) THEN
         allocate ( gls_Kmin(Ngrids) )
@@ -4227,6 +4239,10 @@
       IF (allocated(str_cd))            deallocate ( str_cd )
 
       IF (allocated(gls_c4))            deallocate ( gls_c4 )
+
+      IF (allocated(str_ramp))          deallocate ( str_ramp )
+
+      IF (allocated(str_fac))           deallocate ( str_fac )
 # endif
 
       IF (allocated(gls_Kmin))          deallocate ( gls_Kmin )

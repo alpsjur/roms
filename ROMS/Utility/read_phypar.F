@@ -948,6 +948,8 @@
               Npts=load_r(Nval, Rval, Ngrids, str_cd)
             CASE ('GLS_C4')
               Npts=load_r(Nval, Rval, Ngrids, gls_c4)
+            CASE ('STR_RAMP')
+              Npts=load_i(Nval, Rval, Ngrids, str_ramp)
 # endif
             CASE ('CHARNOK_ALPHA')
               Npts=load_r(Nval, Rval, Ngrids, charnok_alpha)
@@ -5473,6 +5475,15 @@
      &          'Structure cylinder drag coefficient.'
           WRITE (out,200) gls_c4(ng), 'gls_c4',                         &
      &          'GLS structure production coefficient.'
+          WRITE (out,'(1x,i10,2x,a,t30,a)') str_ramp(ng),           &
+     &          'str_ramp',                                            &
+     &          'Structure drag/mixing ramp-up length (time-steps).'
+          IF (str_ramp(ng).gt.0) THEN
+            WRITE (out,'(1x,f10.3,2x,a,t30,a)')                       &
+     &            REAL(str_ramp(ng),r8)*dt(ng)/3600.0_r8,             &
+     &            'str_ramp_hours',                                   &
+     &            'Structure ramp-up length (hours).'
+          END IF
 # endif
           WRITE (out,140) charnok_alpha(ng), 'charnok_alpha',           &
      &          'Charnock factor for Zos calculation.'

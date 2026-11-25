@@ -717,7 +717,14 @@ Add the following to the ROMS `.in` file, in the GLS parameter block next to `GL
 
     STR_CD == 1.0d0
     GLS_C4 == 1.0d0
+  STR_RAMP == 0           ! ramp-up length [time-steps]; 0 = no ramp
 ```
+
+**Ramp-up:** `str_fac(ng)` (computed each step in `main3d.F`, after `tdays`) is
+`0.5*(1-cos(pi*t/T))` for `t<T` and 1 afterwards, with `T = str_ramp*dt` and
+`t = time - dstart*day2sec`. It multiplies the drag in `rhs3d.F` and `Pd_struct` in
+`gls_corstep.F`. `str_ramp`/`str_fac` live in `mod_scalars.F`; `str_ramp` is
+parsed in `read_phypar.F` and written by `def_info.F`/`wrt_info.F` (nf90 and PIO).
 
 ---
 
